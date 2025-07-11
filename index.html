@@ -163,7 +163,7 @@
 
   async function sendToWebhook() {
     try {
-      await fetch('https://hooks.zapier.com/hooks/catch/22435749/u3ja24i/', {
+      await fetch('https://ghostbot-proxy.onrender.com/forward-to-zapier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lead)
