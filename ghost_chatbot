@@ -69,23 +69,31 @@
   const chat = document.getElementById('chat');
   const chatBody = document.getElementById('chat-body');
   const input = document.getElementById('chat-input');
+  input.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage();
+  }
+});
 
   let lead = { source: "GhostBot_UI" };
   let step = 0;
 
   launcher.onclick = () => {
-    chat.style.display = 'flex';
-    launcher.style.display = 'none';
-    botSay("Hi, I’m GhostBot – the AI assistant for Ghost AI Solutions. Are you a business owner, agency, or just browsing?");
-  };
+  chat.style.display = 'flex';
+  launcher.style.display = 'none';
+  botSay("Hi, I’m GhostBot – the AI assistant for Ghost AI Solutions. Are you a business owner, agency, or just browsing?");
+  input.focus(); // 👈 Focus right when chat opens
+};
 
   function botSay(msg) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'message bot';
-    msgDiv.innerHTML = msg;
-    chatBody.appendChild(msgDiv);
-    chatBody.scrollTop = chatBody.scrollHeight;
-  }
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'message bot';
+  msgDiv.textContent = msg;
+  chatBody.appendChild(msgDiv);
+  chatBody.scrollTop = chatBody.scrollHeight;
+  input.focus();
+}
 
   function userSay(msg) {
     const msgDiv = document.createElement('div');
