@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GhostBot - Ghost AI Solutions</title>
   <style>
     body { font-family: Arial, sans-serif; }
@@ -26,6 +26,7 @@
     }
     .chat-body {
       flex: 1; padding: 10px; overflow-y: auto;
+      display: flex; flex-direction: column;
     }
     .chat-input {
       display: flex; border-top: 1px solid #ccc;
@@ -37,13 +38,18 @@
       background: #000; color: #0ff;
       border: none; padding: 10px 15px; cursor: pointer;
     }
-    .message { margin: 10px 0; }
-    .bot { color: #000; background: #e0f7ff;
-      padding: 8px 12px; border-radius: 12px; display: inline-block;
+    .message { margin: 10px 0; max-width: 85%; }
+    .bot {
+      color: #000; background: #e0f7ff;
+      padding: 8px 12px; border-radius: 12px;
+      display: inline-block; align-self: flex-start;
     }
-    .user { color: #fff; background: #000;
-      padding: 8px 12px; border-radius: 12px; display: inline-block; align-self: flex-end;
+    .user {
+      color: #fff; background: #000;
+      padding: 8px 12px; border-radius: 12px;
+      display: inline-block; align-self: flex-end;
     }
+    a { color: #0ff; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -53,7 +59,7 @@
   <div class="chat-header">GhostBot - Your AI Solutions Partner</div>
   <div class="chat-body" id="chat-body"></div>
   <div class="chat-input">
-    <input type="text" id="chat-input" placeholder="Type your message...">
+    <input type="text" id="chat-input" placeholder="Type your message..." />
     <button onclick="sendMessage()">Send</button>
   </div>
 </div>
@@ -64,7 +70,7 @@
   const chatBody = document.getElementById('chat-body');
   const input = document.getElementById('chat-input');
 
-  let lead = {};
+  let lead = { source: "GhostBot_UI" };
   let step = 0;
 
   launcher.onclick = () => {
@@ -76,7 +82,7 @@
   function botSay(msg) {
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message bot';
-    msgDiv.textContent = msg;
+    msgDiv.innerHTML = msg;
     chatBody.appendChild(msgDiv);
     chatBody.scrollTop = chatBody.scrollHeight;
   }
@@ -89,71 +95,93 @@
     chatBody.scrollTop = chatBody.scrollHeight;
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     const msg = input.value.trim();
     if (!msg) return;
     userSay(msg);
     input.value = '';
 
-    if (step === 0) {
-      lead.role = msg;
-      botSay("Great. What’s your name?");
-      step++;
-    } else if (step === 1) {
-      lead.name = msg;
-      botSay("Thanks, " + lead.name + ". What’s your email address?");
-      step++;
-    } else if (step === 2) {
-      lead.email = msg;
-      botSay("What company are you with?");
-      step++;
-    } else if (step === 3) {
-      lead.company = msg;
-      botSay("What industry are you in?");
-      step++;
-    } else if (step === 4) {
-      lead.industry = msg;
-      botSay("And what’s your main goal? (e.g., lead generation, automation, consulting)");
-      step++;
-    } else if (step === 5) {
-      lead.goal = msg;
-      botSay("Thanks! Want to schedule a 15-minute discovery call?");
-      botSay("[Book Now](https://calendly.com/stephen-burch-ghostdefenses/strategy-call)");
-      sendToWebhook();
-      sendEmail();
-      botSay("You’ll receive a confirmation email shortly. Feel free to ask about our services: AI bots, automation, lead gen, cybersecurity, pricing.");
-      step++;
-    } else {
-      // Smart FAQ fallback
-      botSay("Here’s a quick overview:");
-      if (msg.toLowerCase().includes("ai bot")) botSay("We build custom AI bots for sales, support, and automation.");
-      else if (msg.toLowerCase().includes("automation")) botSay("We help businesses automate repetitive tasks using AI workflows.");
-      else if (msg.toLowerCase().includes("lead")) botSay("We generate and qualify leads using intelligent automation.");
-      else if (msg.toLowerCase().includes("cyber")) botSay("We offer advanced AI-powered cybersecurity tools.");
-      else if (msg.toLowerCase().includes("pricing")) botSay("We tailor solutions—reach out for a personalized quote.");
-      else botSay("I’m happy to help—could you rephrase or specify?");
+    switch (step) {
+      case 0:
+        lead.role = msg;
+        botSay("Great. What’s your name?");
+        step++;
+        break;
+      case 1:
+        lead.name = msg;
+        botSay(`Thanks, ${lead.name}. What’s your email address?`);
+        step++;
+        break;
+      case 2:
+        lead.email = msg;
+        botSay("What company are you with?");
+        step++;
+        break;
+      case 3:
+        lead.company = msg;
+        botSay("What industry are you in?");
+        step++;
+        break;
+      case 4:
+        lead.industry = msg;
+        botSay("And what’s your main goal? (e.g., lead generation, automation, consulting)");
+        step++;
+        break;
+      case 5:
+        lead.goal = msg;
+        botSay("Thanks! Want to schedule a 15-minute discovery call?");
+        botSay(`<a href="https://calendly.com/stephen-burch-ghostdefenses/strategy-call" target="_blank">📅 Book Now</a>`);
+        botSay("Sending your info now...");
+        await sendToWebhook();
+        await sendEmail();
+        botSay("You’ll receive a confirmation email shortly. Feel free to ask about our services: AI bots, automation, lead gen, cybersecurity, pricing.");
+        step++;
+        break;
+      default:
+        try {
+          const res = await fetch('https://ghostbot-proxy.onrender.com/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+          });
+          const data = await res.json();
+          botSay(data.reply || "Hmm, I didn’t quite get that. Can you rephrase?");
+        } catch (error) {
+          console.error("GPT proxy error:", error);
+          botSay("Oops! I had trouble reaching the AI brain. Try again in a bit.");
+        }
     }
   }
 
-  function sendToWebhook() {
-    fetch('https://your-webhook-url.com', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(lead)
-    });
+  async function sendToWebhook() {
+    try {
+      await fetch('https://hooks.zapier.com/hooks/catch/22435749/u3ja24i/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      });
+    } catch (err) {
+      console.error("Webhook error:", err);
+      botSay("⚠️ Failed to send to backend.");
+    }
   }
 
-  function sendEmail() {
-    fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        service_id: 'your_service_id',
-        template_id: 'your_template_id',
-        user_id: 'your_user_id',
-        template_params: lead
-      })
-    });
+  async function sendEmail() {
+    try {
+      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: 'service_9wtie0h',
+          template_id: 'template_rgp0dtt',
+          user_id: '_HJERCGMzfwHsy_6U',
+          template_params: lead
+        })
+      });
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      botSay("⚠️ Failed to send confirmation email.");
+    }
   }
 </script>
 
