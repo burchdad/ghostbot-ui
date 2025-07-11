@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GhostBot - Ghost AI Solutions</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .chat-launcher {
+      position: fixed; bottom: 20px; right: 20px;
+      background-color: #000; color: #0ff;
+      border-radius: 50%; width: 60px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 24px;
+    }
+    .chat-window {
+      position: fixed; bottom: 100px; right: 20px;
+      width: 320px; height: 500px;
+      background: #f9f9f9; border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none; flex-direction: column;
+    }
+    .chat-header {
+      background: #000; color: #0ff;
+      padding: 10px; text-align: center;
+    }
+    .chat-body {
+      flex: 1; padding: 10px; overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+    .chat-input {
+      display: flex; border-top: 1px solid #ccc;
+    }
+    .chat-input input {
+      flex: 1; border: none; padding: 10px;
+    }
+    .chat-input button {
+      background: #000; color: #0ff;
+      border: none; padding: 10px 15px; cursor: pointer;
+    }
+    .message { margin: 10px 0; max-width: 85%; }
+    .bot {
+      color: #000; background: #e0f7ff;
+      padding: 8px 12px; border-radius: 12px;
+      display: inline-block; align-self: flex-start;
+    }
+    .user {
+      color: #fff; background: #000;
+      padding: 8px 12px; border-radius: 12px;
+      display: inline-block; align-self: flex-end;
+    }
+    a { color: #0ff; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="chat-launcher" id="launcher">💬</div>
+<div class="chat-window" id="chat">
+  <div class="chat-header">GhostBot - Your AI Solutions Partner</div>
+  <div class="chat-body" id="chat-body"></div>
+  <div class="chat-input">
+    <input type="text" id="chat-input" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const launcher = document.getElementById('launcher');
+  const chat = document.getElementById('chat');
+  const chatBody = document.getElementById('chat-body');
+  const input = document.getElementById('chat-input');
+
+  let lead = { source: "GhostBot_UI" };
+  let step = 0;
+
+  launcher.onclick = () => {
+    chat.style.display = 'flex';
+    launcher.style.display = 'none';
+    botSay("Hi, I’m GhostBot – the AI assistant for Ghost AI Solutions. Are you a business owner, agency, or just browsing?");
+  };
+
+  function botSay(msg) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message bot';
+    msgDiv.innerHTML = msg;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function userSay(msg) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message user';
+    msgDiv.textContent = msg;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const msg = input.value.trim();
+    if (!msg) return;
+    userSay(msg);
+    input.value = '';
+
+    switch (step) {
+      case 0:
+        lead.role = msg;
+        botSay("Great. What’s your name?");
+        step++;
+        break;
+      case 1:
+        lead.name = msg;
+        botSay(`Thanks, ${lead.name}. What’s your email address?`);
+        step++;
+        break;
+      case 2:
+        lead.email = msg;
+        botSay("What company are you with?");
+        step++;
+        break;
+      case 3:
+        lead.company = msg;
+        botSay("What industry are you in?");
+        step++;
+        break;
+      case 4:
+        lead.industry = msg;
+        botSay("And what’s your main goal? (e.g., lead generation, automation, consulting)");
+        step++;
+        break;
+      case 5:
+        lead.goal = msg;
+        botSay("Thanks! Want to schedule a 15-minute discovery call?");
+        botSay(`<a href="https://calendly.com/stephen-burch-ghostdefenses/strategy-call" target="_blank">📅 Book Now</a>`);
+        botSay("Sending your info now...");
+        await sendToWebhook();
+        await sendEmail();
+        botSay("You’ll receive a confirmation email shortly. Feel free to ask about our services: AI bots, automation, lead gen, cybersecurity, pricing.");
+        step++;
+        break;
+      default:
+        try {
+          const res = await fetch('https://ghostbot-proxy.onrender.com/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+          });
+          const data = await res.json();
+          botSay(data.reply || "Hmm, I didn’t quite get that. Can you rephrase?");
+        } catch (error) {
+          console.error("GPT proxy error:", error);
+          botSay("Oops! I had trouble reaching the AI brain. Try again in a bit.");
+        }
+    }
+  }
+
+  async function sendToWebhook() {
+    try {
+      await fetch('https://hooks.zapier.com/hooks/catch/22435749/u3ja24i/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      });
+    } catch (err) {
+      console.error("Webhook error:", err);
+      botSay("⚠️ Failed to send to backend.");
+    }
+  }
+
+  async function sendEmail() {
+    try {
+      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: 'service_9wtie0h',
+          template_id: 'template_rgp0dtt',
+          user_id: '_HJERCGMzfwHsy_6U',
+          template_params: lead
+        })
+      });
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      botSay("⚠️ Failed to send confirmation email.");
+    }
+  }
+</script>
+
+</body>
+</html>
