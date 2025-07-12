@@ -160,6 +160,22 @@
         }
     }
   }
+  function toTitleCase(str) {
+  return str.replace(/\w\S*/g, (txt) => {
+    return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
+  });
+}
+
+// Before sending to webhook:
+const payload = {
+  source: "GhostBot_UI",
+  role: toTitleCase(role),
+  name: toTitleCase(name),
+  email: email.toLowerCase(), // keep email lowercase
+  company: toTitleCase(company),
+  industry: toTitleCase(industry),
+  goal: toTitleCase(goal),
+};
 
   async function sendToWebhook() {
     try {
